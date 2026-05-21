@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在宅算定シミュレータ｜機能強化型在支診（病床あり）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Spline+Sans+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#f6f2e9;--paper-2:#efe9da;--ink:#23211c;--ink-soft:#5b574d;--line:#d8cfba;--line-soft:#e6ddca;
+    --accent:#9c2b22;--accent-deep:#7a1f18;--indigo:#1f3a52;--card:#fffdf8;--warn:#9a6212;
+    --shadow:0 1px 0 #fff inset, 0 18px 40px -28px rgba(35,33,28,.5);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:"Zen Kaku Gothic New",sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;
+    background-image:radial-gradient(circle at 12% -10%, rgba(156,43,34,.05), transparent 40%),radial-gradient(circle at 100% 0%, rgba(31,58,82,.05), transparent 45%);
+    min-height:100vh;padding:0 0 72px;}
+  .wrap{max-width:980px;margin:0 auto;padding:0 22px}
+  header{padding:40px 0 20px;border-bottom:2px solid var(--ink)}
+  .eyebrow{font-family:"Spline Sans Mono",monospace;font-size:11px;letter-spacing:.34em;color:var(--accent);text-transform:uppercase}
+  h1{font-family:"Shippori Mincho B1",serif;font-weight:700;font-size:clamp(26px,4.4vw,40px);letter-spacing:.02em;margin:10px 0 6px;line-height:1.18}
+  h1 .thin{font-weight:500;color:var(--ink-soft)}
+  .sub{color:var(--ink-soft);font-size:14px;max-width:64ch}
+  .badges{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+  .tag{display:inline-block;font-family:"Spline Sans Mono",monospace;font-size:11px;letter-spacing:.06em;border:1px solid var(--line);background:var(--paper-2);padding:4px 10px;border-radius:2px;color:var(--ink-soft)}
+  .tag.fix{border-color:var(--indigo);color:var(--indigo);background:#eef2f5;font-weight:600}
+  .notice{margin-top:20px;border-left:3px solid var(--warn);background:#fbf3e2;color:#6d4708;border-radius:0 5px 5px 0;padding:13px 16px;font-size:12.5px;line-height:1.65}
+  .notice b{color:#5a3a06}
+  .notice code{font-family:"Spline Sans Mono",monospace;background:#f3e6c8;padding:1px 5px;border-radius:3px;font-size:11px}
+
+  /* tab nav */
+  .tabs{display:flex;gap:6px;margin-top:26px;flex-wrap:wrap}
+  .tab{font-family:"Shippori Mincho B1",serif;font-size:13.5px;font-weight:500;padding:9px 16px;border:1px solid var(--line);border-bottom:none;border-radius:6px 6px 0 0;background:var(--paper-2);color:var(--ink-soft);cursor:pointer;transition:.14s}
+  .tab .n{font-family:"Spline Sans Mono",monospace;font-size:10px;color:var(--accent);margin-right:6px}
+  .tab:hover{color:var(--ink)}
+  .tab.active{background:var(--card);color:var(--ink);border-color:var(--line);position:relative;top:1px;font-weight:700}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:0 6px 6px 6px;box-shadow:var(--shadow);overflow:hidden;display:none}
+  .panel.active{display:block}
+  .panel-b{padding:22px}
+  .lead{font-size:12.5px;color:var(--ink-soft);margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line-soft)}
+  .lead b{color:var(--ink)}
+
+  .cols{display:grid;grid-template-columns:1fr 300px;gap:26px;align-items:start}
+  @media(max-width:760px){.cols{grid-template-columns:1fr;gap:18px}}
+
+  .field{margin-bottom:20px}.field:last-child{margin-bottom:0}
+  .label{font-size:13px;font-weight:700;letter-spacing:.04em;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+  .label .hint{font-weight:400;color:var(--ink-soft);font-size:11.5px}
+  .opts{display:flex;flex-direction:column;gap:7px}
+  .gopts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  @media(max-width:520px){.gopts{grid-template-columns:1fr}}
+  .opt{position:relative;display:flex;align-items:flex-start;gap:11px;border:1px solid var(--line);border-radius:5px;padding:10px 13px;cursor:pointer;background:var(--paper);transition:.14s}
+  .opt:hover{border-color:var(--ink-soft);background:#fff}
+  .opt input{position:absolute;opacity:0;pointer-events:none}
+  .dot{flex:0 0 16px;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line);margin-top:3px;transition:.14s;position:relative}
+  .opt input:checked ~ .dot{border-color:var(--accent)}
+  .opt input:checked ~ .dot::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--accent)}
+  .opt:has(input:checked){border-color:var(--accent);background:#fff;box-shadow:0 0 0 1px var(--accent) inset}
+  .otext{flex:1}.ot{font-size:13.5px;font-weight:500}.od{font-size:11.5px;color:var(--ink-soft);margin-top:1px}
+  .opt .pp{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--accent-deep);font-weight:600}
+  .chk{position:relative;display:flex;align-items:flex-start;gap:10px;border:1px solid var(--line);border-radius:5px;padding:10px 12px;cursor:pointer;background:var(--paper);transition:.14s;margin-bottom:7px}
+  .chk:hover{border-color:var(--ink-soft);background:#fff}
+  .chk.disabled{opacity:.4;cursor:not-allowed;background:var(--paper-2)}
+  .chk input{position:absolute;opacity:0;pointer-events:none}
+  .box{flex:0 0 16px;width:16px;height:16px;border:1.5px solid var(--line);border-radius:3px;margin-top:3px;position:relative;transition:.14s}
+  .chk input:checked ~ .box{border-color:var(--indigo);background:var(--indigo)}
+  .chk input:checked ~ .box::after{content:"";position:absolute;left:4.5px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .chk:has(input:checked){border-color:var(--indigo);background:#fff}
+  .ctext{flex:1;font-size:13px}.ctext .cv{font-family:"Spline Sans Mono",monospace;color:var(--indigo);font-weight:600;font-size:12px}
+  .ctext .cd{color:var(--ink-soft);font-size:11px;margin-top:1px}
+  select,input[type=number]{width:100%;font-family:inherit;font-size:13.5px;padding:9px 11px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink)}
+  select{cursor:pointer}
+  select:focus,input:focus{outline:none;border-color:var(--accent)}
+  .inline{display:flex;align-items:center;gap:10px}.inline input[type=number]{width:80px}
+
+  .result{position:sticky;top:16px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--card)}
+  .result .rh{background:linear-gradient(var(--indigo),#16293a);color:#fff;padding:11px 16px;font-family:"Shippori Mincho B1",serif;font-size:14px;font-weight:700}
+  .total{padding:20px 18px 14px;text-align:center;border-bottom:1px dashed var(--line)}
+  .total .cap{font-size:10.5px;letter-spacing:.18em;color:var(--ink-soft);font-family:"Spline Sans Mono",monospace}
+  .total .pts{font-family:"Spline Sans Mono",monospace;font-weight:600;font-size:44px;color:var(--accent-deep);line-height:1;margin:6px 0 2px}
+  .total .pts .u{font-size:17px;color:var(--ink);margin-left:3px}
+  .total .yen{font-size:13px;color:var(--ink-soft)}.total .yen b{color:var(--ink);font-family:"Spline Sans Mono",monospace}
+  .bd{padding:12px 16px}
+  .bd .row{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:5px 0;border-bottom:1px solid var(--line-soft)}
+  .bd .row:last-child{border-bottom:none}
+  .bd .row .k{color:var(--ink-soft)}.bd .row .v{font-family:"Spline Sans Mono",monospace;font-weight:600}
+  .bd .row.add .v{color:var(--indigo)}
+  .flag{font-size:11px;line-height:1.5;padding:8px 16px;background:#eef2f5;color:#284a64;border-top:1px solid var(--line-soft)}
+  .flag.w{background:#fbf3e2;color:#6d4708}
+
+  footer{margin-top:30px;font-size:11.5px;color:var(--ink-soft);line-height:1.7;border-top:1px solid var(--line);padding-top:18px}
+  footer b{color:var(--ink)}
+  footer code{font-family:"Spline Sans Mono",monospace;background:var(--paper-2);padding:1px 5px;border-radius:3px;font-size:11px}
+  .src{margin-top:8px;font-family:"Spline Sans Mono",monospace;font-size:10.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Home Care Billing Simulator</div>
+    <h1>在宅算定シミュレータ<br><span class="thin">機能強化型在支診（病床あり）</span></h1>
+    <p class="sub">月額管理料・訪問診療料・往診料・在宅での看取り加算を、当院区分（機能強化型・病床あり）に固定して算定。各タブは独立した小計を出します（月額と1回ごとの点数は単位が異なるため合算しません）。</p>
+    <div class="badges">
+      <span class="tag fix">機能強化型 在支診・病床あり</span>
+      <span class="tag fix">在宅医療充実体制加算 届出済</span>
+      <span class="tag">BCP策定済・往診体制確保・別表8の2＋8の3 ≧2割 充足</span>
+      <span class="tag">全項目 令和8年公式点数</span>
+    </div>
+    <div class="notice">
+      <b>点数の出典</b>　すべて<b>厚生労働省 医科点数表（令和8年度改定）</b>の第2部 在宅医療から反映。C002 在医総管・C002-2 施設総管（1のイ＝機能強化型・病床あり）は令和8年公式表で確認した結果、<b>令和6年から据え置き（変更なし）</b>でした。一方 訪問診療料は令和8年で微増（同一建物以外 888→890、同一建物 213→215 等）しています。改定概要資料も反映し、在宅医療充実体制加算（旧・在宅緩和ケア充実診療所加算／令和8で改称・増点）、月2回区分の重症割合2割要件（注16）、訪問診療薬剤師同時指導料（新設）等を組み込みました。点数は冒頭の <code>PTS</code> 等で差し替え可能です。
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="kanri"><span class="n">01</span>月額管理料</button>
+      <button class="tab" data-tab="homon"><span class="n">02</span>訪問診療料</button>
+      <button class="tab" data-tab="ouhin"><span class="n">03</span>往診料</button>
+      <button class="tab" data-tab="terminal"><span class="n">04</span>看取り・ターミナル</button>
+      <button class="tab" data-tab="shidou"><span class="n">05</span>在宅療養指導管理料ほか</button>
+    </div>
+  </header>
+
+  <!-- 01 管理料 -->
+  <section class="panel active" id="tab-kanri">
+    <div class="panel-b">
+      <div class="lead"><b>在宅時医学総合管理料／施設入居時等医学総合管理料（月1回）</b>　機能強化型・病床あり（告示1のイ）。月額。令和8年確認済み。</div>
+      <div class="cols">
+        <div>
+          <div class="field">
+            <div class="label">管理料の種別</div>
+            <div class="gopts" id="kanri">
+              <label class="opt"><input type="radio" name="kanri" value="zaitaku" checked><span class="dot"></span><span class="otext"><span class="ot">在医総管</span><span class="od">C002 / 居宅の患者</span></span></label>
+              <label class="opt"><input type="radio" name="kanri" value="shisetsu"><span class="dot"></span><span class="otext"><span class="ot">施設総管</span><span class="od">C002-2 / 施設入居者</span></span></label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label">訪問パターン</div>
+            <div class="opts" id="visit">
+              <label class="opt"><input type="radio" name="visit" value="juushou2" checked><span class="dot"></span><span class="otext"><span class="ot">重症者に月2回以上</span><span class="od">別表第八の二の状態・月2回以上</span></span></label>
+              <label class="opt"><input type="radio" name="visit" value="tsujou2"><span class="dot"></span><span class="otext"><span class="ot">月2回以上（通常）</span><span class="od">上記重症に該当しない場合</span></span></label>
+              <label class="opt"><input type="radio" name="visit" value="online2"><span class="dot"></span><span class="otext"><span class="ot">月2回以上・うち1回オンライン</span></span></label>
+              <label class="opt"><input type="radio" name="visit" value="tsujou1"><span class="dot"></span><span class="otext"><span class="ot">月1回訪問</span></span></label>
+              <label class="opt"><input type="radio" name="visit" value="online1"><span class="dot"></span><span class="otext"><span class="ot">月1回・隔月オンライン</span></span></label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label">単一建物診療患者数</div>
+            <div class="gopts" id="tier">
+              <label class="opt"><input type="radio" name="tier" value="0" checked><span class="dot"></span><span class="otext"><span class="ot">1人</span></span></label>
+              <label class="opt"><input type="radio" name="tier" value="1"><span class="dot"></span><span class="otext"><span class="ot">2〜9人</span></span></label>
+              <label class="opt"><input type="radio" name="tier" value="2"><span class="dot"></span><span class="otext"><span class="ot">10〜19人</span></span></label>
+              <label class="opt"><input type="radio" name="tier" value="3"><span class="dot"></span><span class="otext"><span class="ot">20〜49人</span></span></label>
+              <label class="opt"><input type="radio" name="tier" value="4"><span class="dot"></span><span class="otext"><span class="ot">50人以上</span></span></label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label">加算（月単位）</div>
+            <label class="chk"><input type="checkbox" id="k_juujitsu" checked><span class="box"></span><span class="ctext"><b>在宅医療充実体制加算</b> <span class="cv" id="k_juujitsu_pt">+800</span><div class="cd">届出済（当院）。単一建物区分で変動（旧・在宅緩和ケア充実診療所加算／令和8改称・増点）</div></span></label>
+            <div id="kanriAddons"></div>
+            <div class="inline" style="margin-top:8px">
+              <span style="font-size:12.5px;font-weight:500">頻回訪問加算</span>
+              <select id="hinkai" style="flex:1">
+                <option value="0">なし</option>
+                <option value="800">初回の月　+800</option>
+                <option value="300">2回目以降　+300</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="result">
+          <div class="rh">月額・小計</div>
+          <div class="total"><div class="cap">10割</div><div class="pts"><span id="kPts">0</span><span class="u">点</span></div><div class="yen">＝ <b id="kYen">0</b> 円</div></div>
+          <div class="bd" id="kBd"></div>
+          <div id="kFlag"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 訪問診療料 -->
+  <section class="panel" id="tab-homon">
+    <div class="panel-b">
+      <div class="lead"><b>在宅患者訪問診療料（Ⅰ）（1日につき）</b>　令和8年公式点数。訪問1回ごと。</div>
+      <div class="cols">
+        <div>
+          <div class="field">
+            <div class="label">区分</div>
+            <div class="opts" id="hKubun">
+              <label class="opt"><input type="radio" name="hk" value="1" checked><span class="dot"></span><span class="otext"><span class="ot">訪問診療料1</span><span class="od">自院が主治医として定期訪問</span></span></label>
+              <label class="opt"><input type="radio" name="hk" value="2"><span class="dot"></span><span class="otext"><span class="ot">訪問診療料2</span><span class="od">他院の依頼で紹介患者へ訪問（6月限度）</span></span></label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label">同一建物</div>
+            <div class="opts" id="hBuild">
+              <label class="opt"><input type="radio" name="hb" value="alone" checked><span class="dot"></span><span class="otext"><span class="ot">同一建物居住者以外</span></span><span class="pp" id="hp_alone"></span></label>
+              <label class="opt"><input type="radio" name="hb" value="same"><span class="dot"></span><span class="otext"><span class="ot">同一建物居住者</span></span><span class="pp" id="hp_same"></span></label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label">加算</div>
+            <label class="chk"><input type="checkbox" id="h_baby"><span class="box"></span><span class="ctext"><b>乳幼児加算</b> <span class="cv">+400</span><div class="cd">6歳未満</div></span></label>
+            <label class="chk"><input type="checkbox" id="h_yakuzai"><span class="box"></span><span class="ctext"><b>訪問診療薬剤師同時指導料</b> <span class="cv">+300</span><div class="cd">医師と薬剤師の同時訪問・6月に1回（令和8新設）</div></span></label>
+            <div class="inline" style="margin-top:4px">
+              <span style="font-size:12.5px">患家診療時間 1時間超</span>
+              <input type="number" id="h_time" min="0" max="20" value="0" step="1">
+              <span style="font-size:11.5px;color:var(--ink-soft)">×30分（+100/単位）</span>
+            </div>
+          </div>
+        </div>
+        <div class="result">
+          <div class="rh">1回・小計</div>
+          <div class="total"><div class="cap">10割</div><div class="pts"><span id="hPts">0</span><span class="u">点</span></div><div class="yen">＝ <b id="hYen">0</b> 円</div></div>
+          <div class="bd" id="hBd"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 往診料 -->
+  <section class="panel" id="tab-ouhin">
+    <div class="panel-b">
+      <div class="lead"><b>往診料（C000）</b>　基本720点＋時間帯加算（機能強化型・病床ありの値）。往診1回ごと。</div>
+      <div class="cols">
+        <div>
+          <div class="field">
+            <div class="label">往診の時間帯</div>
+            <div class="opts" id="oKubun">
+              <label class="opt"><input type="radio" name="ok" value="0" checked><span class="dot"></span><span class="otext"><span class="ot">通常（加算なし）</span></span></label>
+              <label class="opt"><input type="radio" name="ok" value="850"><span class="dot"></span><span class="otext"><span class="ot">緊急往診加算</span></span><span class="pp">+850</span></label>
+              <label class="opt"><input type="radio" name="ok" value="1700"><span class="dot"></span><span class="otext"><span class="ot">夜間・休日往診加算</span></span><span class="pp">+1,700</span></label>
+              <label class="opt"><input type="radio" name="ok" value="2700"><span class="dot"></span><span class="otext"><span class="ot">深夜往診加算</span></span><span class="pp">+2,700</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label">加算</div>
+            <label class="chk"><input type="checkbox" value="200" id="o_juujitsu"><span class="box"></span><span class="ctext"><b>在宅医療充実体制加算</b> <span class="cv">+200</span><div class="cd">届出施設が緊急・夜間休日・深夜往診加算を算定する場合（令和8で100→200）</div></span></label>
+            <label class="chk"><input type="checkbox" value="200" id="o_renkei"><span class="box"></span><span class="ctext"><b>往診時医療情報連携加算</b> <span class="cv">+200</span><div class="cd">連携医療機関が主治医の患者へ往診（機能強化型以外との連携に拡大）</div></span></label>
+            <label class="chk"><input type="checkbox" value="200" id="o_kaigo"><span class="box"></span><span class="ctext"><b>介護保険施設等連携往診加算</b> <span class="cv">+200</span><div class="cd">協力医療機関として入所者の急変時往診</div></span></label>
+            <div class="inline" style="margin-top:4px">
+              <span style="font-size:12.5px">患家診療時間 1時間超</span>
+              <input type="number" id="o_time" min="0" max="20" value="0" step="1">
+              <span style="font-size:11.5px;color:var(--ink-soft)">×30分（+100/単位）</span>
+            </div>
+          </div>
+        </div>
+        <div class="result">
+          <div class="rh">1回・小計</div>
+          <div class="total"><div class="cap">10割</div><div class="pts"><span id="oPts">0</span><span class="u">点</span></div><div class="yen">＝ <b id="oYen">0</b> 円</div></div>
+          <div class="bd" id="oBd"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 看取り・ターミナル -->
+  <section class="panel" id="tab-terminal">
+    <div class="panel-b">
+      <div class="lead"><b>在宅での死亡時の加算</b>　在宅ターミナルケア加算（機能強化型・病床あり＝6,500点）を起点に算定。訪問診療料／往診料に上乗せ。</div>
+      <div class="cols">
+        <div>
+          <label class="chk" style="margin-bottom:14px"><input type="checkbox" id="t_base" checked><span class="box"></span><span class="ctext"><b>在宅ターミナルケア加算</b> <span class="cv">6,500</span><div class="cd">死亡日及び前14日以内に2回以上の訪問診療等（病床あり）</div></span></label>
+          <div class="field">
+            <div class="label">届出による上乗せ <span class="hint">（いずれか）</span></div>
+            <select id="t_jiseki">
+              <option value="0">なし</option>
+              <option value="2000">在宅医療充実体制加算　+2,000</option>
+              <option value="750">在宅療養実績加算1　+750</option>
+              <option value="500">在宅療養実績加算2　+500</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="label">その他</div>
+            <label class="chk"><input type="checkbox" id="t_o2"><span class="box"></span><span class="ctext"><b>酸素療法加算</b> <span class="cv">+2,000</span><div class="cd">がん患者に酸素療法を行っていた場合</div></span></label>
+            <label class="chk"><input type="checkbox" id="t_mitori"><span class="box"></span><span class="ctext"><b>看取り加算</b> <span class="cv">+3,000</span><div class="cd">在宅で看取った場合（ターミナルケア加算の算定が前提）</div></span></label>
+            <label class="chk" id="t_shibo_wrap"><input type="checkbox" id="t_shibo"><span class="box"></span><span class="ctext"><b>死亡診断加算</b> <span class="cv">+200</span><div class="cd">患家で死亡診断。看取り加算とは併算定不可</div></span></label>
+          </div>
+        </div>
+        <div class="result">
+          <div class="rh">死亡時・小計</div>
+          <div class="total"><div class="cap">10割</div><div class="pts"><span id="tPts">0</span><span class="u">点</span></div><div class="yen">＝ <b id="tYen">0</b> 円</div></div>
+          <div class="bd" id="tBd"></div>
+          <div id="tFlag"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 在宅療養指導管理料ほか -->
+  <section class="panel" id="tab-shidou">
+    <div class="panel-b">
+      <div class="lead"><b>在宅療養指導管理料ほか（令和8年改定・新設/見直し項目）</b>　患者ごとに該当するものを選択。算定頻度は項目ごとに異なります（下部の注記参照）。</div>
+      <div class="cols">
+        <div>
+          <div class="field">
+            <div class="label">該当する管理料・指導料</div>
+            <div id="shidouList"></div>
+          </div>
+          <div style="font-size:11px;color:var(--ink-soft);line-height:1.6;border-top:1px solid var(--line-soft);padding-top:12px">
+            ※ 在宅療養指導管理材料加算（注入器・酸素ボンベ・人工呼吸器加算等）は、令和8年改定で算定要件が<b>「3月に3回」に統一</b>されました（点数は各材料による）。<br>
+            ※ 退院後訪問栄養食事指導料は<b>退院元の医療機関</b>（管理栄養士）が算定する項目です。当院が在宅側で行う場合は C009 在宅患者訪問栄養食事指導料を算定。<br>
+            ※ 算定頻度の目安：在宅麻薬等注射・在宅酸素等の指導管理料＝月1回／遠隔連携診療料＝3月に1回／在宅自己腹膜灌流指導管理料2＝一連の治療につき2回。
+          </div>
+        </div>
+        <div class="result">
+          <div class="rh">選択合計</div>
+          <div class="total"><div class="cap">10割</div><div class="pts"><span id="sPts">0</span><span class="u">点</span></div><div class="yen">＝ <b id="sYen">0</b> 円</div></div>
+          <div class="bd" id="sBd"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <b>前提・注意</b><br>
+    医療機関区分は<b>機能強化型 在支診（病床あり）に固定</b>。点数は HTML 冒頭の定数（<code>PTS</code>／各 <code>const</code>）で管理し、改定時はそこを差し替えれば対応できます。<br>
+    ・全タブ 令和8年度診療報酬改定の公式点数。管理料（C002/C002-2 1のイ）は令和8年で令和6年から据え置きであることを確認済み。<br>
+    ・当院は機能強化型在支診（病床あり）として、BCP策定・自院での24時間往診体制確保・在宅医療充実体制加算の届出・別表8の2＋8の3 が2割以上の要件をいずれも充足済み。よって機能強化型の点数（往診加算/ターミナルケア加算/管理料）を算定し、月2回区分（注16）も算定可。<br>
+    ・タブ04の看取り加算はターミナルケア加算の算定が前提。看取り加算を取る場合、死亡診断加算は併算定不可（自動排他）。<br>
+    ・往診ターミナルと訪問診療ターミナルは同時算定不可。本タブは死亡時加算を1回分として計算します。<br>
+    <span class="src">SOURCE: 厚生労働省 医科点数表（令和8年度改定・第2部 在宅医療）。C002/C002-2 1のイは令和6から据え置きを確認。最終算定はレセコン・原典で確認してください。</span>
+  </footer>
+</div>
+
+<script>
+/* ===== 点数定数 ============================================== */
+/* 管理料：機能強化型・病床あり「1のイ」のみ。令和8年度改定で確認済み（令和6から据え置き）
+   配列 = [単一建物 1人, 2〜9, 10〜19, 20〜49, 50以上] */
+const PTS = {
+  zaitaku:{ juushou2:[5385,4485,2865,2400,2110], tsujou2:[4485,2385,1185,1065,905], online2:[3014,1670,865,780,660], tsujou1:[2745,1485,765,670,575], online1:[1500,828,425,373,317] },
+  shisetsu:{ juushou2:[3885,3225,2865,2400,2110], tsujou2:[3185,1685,1185,1065,905], online2:[2234,1250,865,780,660], tsujou1:[1965,1065,765,670,575], online1:[1110,618,425,373,317] }
+};
+/* 在宅医療充実体制加算（管理料への上乗せ・届出施設）令和8年改称＋増点
+   [単一建物 1人,2〜9,10〜19,20〜49,50以上] */
+const JUUJITSU={ zaitaku:[800,400,200,170,150], shisetsu:[600,300,150,126,112] };
+const KANRI_ADDONS=[
+  {id:"isou",pt:100,label:"在宅移行早期加算",note:"在宅移行・開始月から3月限度"},
+  {id:"houkatsu",pt:150,label:"包括的支援加算",note:"重症2回区分には算定不可"},
+  {id:"dx",pt:10,label:"在宅医療DX情報活用加算",note:"月1回"},
+  {id:"renkei",pt:100,label:"在宅医療情報連携加算",note:"ICT多職種連携・月1回"},
+  {id:"shohou",pt:300,label:"処方箋を交付しない場合",note:"院内投薬等"}
+];
+/* 訪問診療料(Ⅰ) 令和8年：[同一建物以外, 同一建物] */
+const HOMON={ "1":{alone:890,same:215}, "2":{alone:886,same:189} };
+const HOMON_BABY=400, TIME_UNIT=100, HOMON_YAKUZAI=300;
+/* 往診料 令和8年（病床あり） */
+const OUSHIN_BASE=720;
+/* ターミナル 令和8年（病床あり） */
+const TERM_BASE=6500, TERM_MITORI=3000, TERM_SHIBO=200, TERM_O2=2000;
+const POINT_YEN=10;
+/* 在宅療養指導管理料ほか（令和8年改定・新設/見直し） */
+const SHIDOU=[
+  {id:"hft2",pt:2400,label:"在宅ハイフローセラピー指導管理料2",note:"新設。重度低酸素血症で入院中に高濃度HFNC導入後、在宅継続"},
+  {id:"capd2",pt:1500,label:"在宅自己腹膜灌流指導管理料2",note:"新設。管理料1算定の他院の求めで指導管理（一連につき2回）"},
+  {id:"mayaku",pt:1500,label:"在宅麻薬等注射指導管理料3（心不全・呼吸器・腎不全）",note:"令和8で対象に末期腎不全を追加"},
+  {id:"enkaku",pt:900,label:"遠隔連携診療料（訪問診療の場合）",note:"D to P with D。3月に1回。外来緩和ケア管理料対象患者等"},
+  {id:"taiin_eiyou",pt:530,label:"退院後訪問栄養食事指導料",note:"新設。退院元の管理栄養士が患家訪問（退院1月以内・4回まで）"}
+];
+
+const $=s=>document.querySelector(s);
+const fmt=n=>n.toLocaleString('ja-JP');
+const valr=n=>{const e=document.querySelector('input[name="'+n+'"]:checked');return e?e.value:null;};
+
+/* tabs */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+}));
+
+/* 管理料加算描画 */
+const kAdd=$('#kanriAddons');
+KANRI_ADDONS.forEach(a=>{
+  const l=document.createElement('label'); l.className='chk'; l.dataset.id=a.id;
+  l.innerHTML='<input type="checkbox" data-pt="'+a.pt+'" value="'+a.id+'"><span class="box"></span>'+
+    '<span class="ctext"><b>'+a.label+'</b> <span class="cv">+'+a.pt+'</span><div class="cd">'+a.note+'</div></span>';
+  kAdd.appendChild(l);
+});
+
+const VN={juushou2:"重症・月2回以上",tsujou2:"月2回以上",online2:"月2回・オンライン",tsujou1:"月1回",online1:"月1回・隔月オンライン"};
+const TN=["1人","2〜9人","10〜19人","20〜49人","50人以上"];
+
+/* 在宅療養指導管理料ほか 描画 */
+const sList=$('#shidouList');
+SHIDOU.forEach(s=>{
+  const l=document.createElement('label'); l.className='chk';
+  l.innerHTML='<input type="checkbox" data-pt="'+s.pt+'" value="'+s.id+'"><span class="box"></span>'+
+    '<span class="ctext"><b>'+s.label+'</b> <span class="cv">'+fmt(s.pt)+'</span><div class="cd">'+s.note+'</div></span>';
+  sList.appendChild(l);
+});
+function calcShidou(){
+  let total=0, rows='';
+  document.querySelectorAll('#shidouList input:checked').forEach(c=>{const pt=+c.dataset.pt;total+=pt;const lbl=SHIDOU.find(s=>s.id===c.value).label;rows+='<div class="row add"><span class="k">'+lbl+'</span><span class="v">'+fmt(pt)+'</span></div>';});
+  $('#sBd').innerHTML=rows||'<div class="row"><span class="k">項目を選択してください</span><span class="v">0</span></div>';
+  $('#sPts').textContent=fmt(total); $('#sYen').textContent=fmt(total*POINT_YEN);
+}
+
+function calcKanri(){
+  const kanri=valr('kanri'), visit=valr('visit'), tier=+valr('tier');
+  const hc=document.querySelector('.chk[data-id="houkatsu"]'), hi=hc.querySelector('input');
+  if(visit==='juushou2'){hi.checked=false;hc.classList.add('disabled');hi.disabled=true;}else{hc.classList.remove('disabled');hi.disabled=false;}
+  const base=PTS[kanri][visit][tier]; let total=base;
+  let rows='<div class="row"><span class="k">'+(kanri==='zaitaku'?'在医総管':'施設総管')+' '+VN[visit]+'／'+TN[tier]+'</span><span class="v">'+fmt(base)+'</span></div>';
+  // 在宅医療充実体制加算（単一建物区分で変動）
+  const jpt=JUUJITSU[kanri][tier]; $('#k_juujitsu_pt').textContent='+'+fmt(jpt);
+  if($('#k_juujitsu').checked){total+=jpt;rows+='<div class="row add"><span class="k">＋ 在宅医療充実体制加算</span><span class="v">+'+fmt(jpt)+'</span></div>';}
+  document.querySelectorAll('#kanriAddons input:checked').forEach(c=>{const pt=+c.dataset.pt;total+=pt;rows+='<div class="row add"><span class="k">＋ '+KANRI_ADDONS.find(a=>a.id===c.value).label+'</span><span class="v">+'+fmt(pt)+'</span></div>';});
+  const hin=+$('#hinkai').value; if(hin){total+=hin;rows+='<div class="row add"><span class="k">＋ 頻回訪問加算</span><span class="v">+'+fmt(hin)+'</span></div>';}
+  $('#kBd').innerHTML=rows; $('#kPts').textContent=fmt(total); $('#kYen').textContent=fmt(total*POINT_YEN);
+  let f='';
+  if(tier>=2) f+='<div class="flag w">単一建物10人以上：訪問診療回数が基準超で60/100減算（注14）の対象になり得ます。</div>';
+  if(visit==='juushou2') f+='<div class="flag">重症区分のため包括的支援加算は算定不可。</div>';
+  if(visit==='tsujou2'||visit==='online2') f+='<div class="flag">月2回区分（注16・別表8の2＋8の3が2割以上）：当院は充足済みのため、この区分で算定可。</div>';
+  $('#kFlag').innerHTML=f;
+}
+
+function calcHomon(){
+  const k=valr('hk'), b=valr('hb');
+  $('#hp_alone').textContent=fmt(HOMON[k].alone); $('#hp_same').textContent=fmt(HOMON[k].same);
+  let base=HOMON[k][b], total=base;
+  let rows='<div class="row"><span class="k">訪問診療料'+k+'・'+(b==='alone'?'同一建物以外':'同一建物')+'</span><span class="v">'+fmt(base)+'</span></div>';
+  if($('#h_baby').checked){total+=HOMON_BABY;rows+='<div class="row add"><span class="k">＋ 乳幼児加算</span><span class="v">+'+fmt(HOMON_BABY)+'</span></div>';}
+  if($('#h_yakuzai').checked){total+=HOMON_YAKUZAI;rows+='<div class="row add"><span class="k">＋ 訪問診療薬剤師同時指導料</span><span class="v">+'+fmt(HOMON_YAKUZAI)+'</span></div>';}
+  const t=Math.max(0,+$('#h_time').value||0); if(t){const v=t*TIME_UNIT;total+=v;rows+='<div class="row add"><span class="k">＋ 患家診療時間加算（'+t+'×30分）</span><span class="v">+'+fmt(v)+'</span></div>';}
+  $('#hBd').innerHTML=rows; $('#hPts').textContent=fmt(total); $('#hYen').textContent=fmt(total*POINT_YEN);
+}
+
+function calcOushin(){
+  let total=OUSHIN_BASE;
+  let rows='<div class="row"><span class="k">往診料（基本）</span><span class="v">'+fmt(OUSHIN_BASE)+'</span></div>';
+  const k=+valr('ok'); if(k){total+=k;const nm={850:'緊急往診加算',1700:'夜間・休日往診加算',2700:'深夜往診加算'}[k];rows+='<div class="row add"><span class="k">＋ '+nm+'</span><span class="v">+'+fmt(k)+'</span></div>';}
+  const ojChk=document.querySelector('label.chk:has(#o_juujitsu)');
+  if(k===0){$('#o_juujitsu').checked=false;$('#o_juujitsu').disabled=true;if(ojChk)ojChk.classList.add('disabled');}else{$('#o_juujitsu').disabled=false;if(ojChk)ojChk.classList.remove('disabled');}
+  if($('#o_juujitsu').checked){total+=200;rows+='<div class="row add"><span class="k">＋ 在宅医療充実体制加算</span><span class="v">+200</span></div>';}
+  if($('#o_renkei').checked){total+=200;rows+='<div class="row add"><span class="k">＋ 往診時医療情報連携加算</span><span class="v">+200</span></div>';}
+  if($('#o_kaigo').checked){total+=200;rows+='<div class="row add"><span class="k">＋ 介護保険施設等連携往診加算</span><span class="v">+200</span></div>';}
+  const t=Math.max(0,+$('#o_time').value||0); if(t){const v=t*TIME_UNIT;total+=v;rows+='<div class="row add"><span class="k">＋ 患家診療時間加算（'+t+'×30分）</span><span class="v">+'+fmt(v)+'</span></div>';}
+  $('#oBd').innerHTML=rows; $('#oPts').textContent=fmt(total); $('#oYen').textContent=fmt(total*POINT_YEN);
+}
+
+function calcTerm(){
+  const baseOn=$('#t_base').checked;
+  // 看取り選択時は死亡診断を排他
+  const mit=$('#t_mitori'), shi=$('#t_shibo'), shiWrap=$('#t_shibo_wrap');
+  if(mit.checked){shi.checked=false;shi.disabled=true;shiWrap.classList.add('disabled');}else{shi.disabled=false;shiWrap.classList.remove('disabled');}
+  let total=0, rows='';
+  if(baseOn){total+=TERM_BASE;rows+='<div class="row"><span class="k">在宅ターミナルケア加算</span><span class="v">'+fmt(TERM_BASE)+'</span></div>';}
+  const j=+$('#t_jiseki').value; if(j){total+=j;const nm={2000:'在宅医療充実体制加算',750:'在宅療養実績加算1',500:'在宅療養実績加算2'}[j];rows+='<div class="row add"><span class="k">＋ '+nm+'</span><span class="v">+'+fmt(j)+'</span></div>';}
+  if($('#t_o2').checked){total+=TERM_O2;rows+='<div class="row add"><span class="k">＋ 酸素療法加算</span><span class="v">+'+fmt(TERM_O2)+'</span></div>';}
+  if(mit.checked){total+=TERM_MITORI;rows+='<div class="row add"><span class="k">＋ 看取り加算</span><span class="v">+'+fmt(TERM_MITORI)+'</span></div>';}
+  if(shi.checked){total+=TERM_SHIBO;rows+='<div class="row add"><span class="k">＋ 死亡診断加算</span><span class="v">+'+fmt(TERM_SHIBO)+'</span></div>';}
+  $('#tBd').innerHTML=rows||'<div class="row"><span class="k">項目を選択してください</span><span class="v">0</span></div>';
+  $('#tPts').textContent=fmt(total); $('#tYen').textContent=fmt(total*POINT_YEN);
+  let f=''; if(mit.checked&&!baseOn) f+='<div class="flag w">看取り加算はターミナルケア加算の算定が前提です。</div>';
+  $('#tFlag').innerHTML=f;
+}
+
+function calcAll(){calcKanri();calcHomon();calcOushin();calcTerm();calcShidou();}
+document.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',calcAll));
+document.querySelectorAll('input[type=number]').forEach(el=>el.addEventListener('input',calcAll));
+calcAll();
+</script>
+</body>
+</html>
