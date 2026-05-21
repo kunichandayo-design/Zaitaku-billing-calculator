@@ -116,7 +116,7 @@
       <button class="tab" data-tab="homon"><span class="n">02</span>訪問診療料</button>
       <button class="tab" data-tab="ouhin"><span class="n">03</span>往診料</button>
       <button class="tab" data-tab="terminal"><span class="n">04</span>看取り・ターミナル</button>
-      <button class="tab" data-tab="shidou"><span class="n">05</span>在宅療養指導管理料ほか</button>
+      <button class="tab" data-tab="shidou"><span class="n">05</span>在宅療養指導管理料</button>
     </div>
   </header>
 
@@ -199,6 +199,7 @@
           </div>
           <div class="field">
             <div class="label">加算</div>
+            <label class="chk"><input type="checkbox" id="h_dx"><span class="box"></span><span class="ctext"><b>在宅医療DX情報活用加算</b> <span class="cv">+10</span><div class="cd">オンライン資格確認等の体制下で訪問診療・月1回</div></span></label>
             <label class="chk"><input type="checkbox" id="h_baby"><span class="box"></span><span class="ctext"><b>乳幼児加算</b> <span class="cv">+400</span><div class="cd">6歳未満</div></span></label>
             <label class="chk"><input type="checkbox" id="h_yakuzai"><span class="box"></span><span class="ctext"><b>訪問診療薬剤師同時指導料</b> <span class="cv">+300</span><div class="cd">医師と薬剤師の同時訪問・6月に1回（令和8新設）</div></span></label>
             <div class="inline" style="margin-top:4px">
@@ -289,17 +290,17 @@
   <!-- 05 在宅療養指導管理料ほか -->
   <section class="panel" id="tab-shidou">
     <div class="panel-b">
-      <div class="lead"><b>在宅療養指導管理料ほか（令和8年改定・新設/見直し項目）</b>　患者ごとに該当するものを選択。算定頻度は項目ごとに異なります（下部の注記参照）。</div>
+      <div class="lead"><b>在宅療養指導管理料（C100〜C121・令和8年点数）</b>　原則 <b>月1回</b>。同一患者に2以上の指導管理を行う場合は<b>主たるものの所定点数のみ</b>を算定（通則2）。複数選択は併算定可能な例外（通則3）の確認用です。</div>
       <div class="cols">
         <div>
           <div class="field">
-            <div class="label">該当する管理料・指導料</div>
-            <div id="shidouList"></div>
+            <div class="label">在宅療養指導管理料 <span class="hint">（該当を選択）</span></div>
+            <div id="shidouList" style="max-height:420px;overflow-y:auto;padding-right:4px"></div>
           </div>
           <div style="font-size:11px;color:var(--ink-soft);line-height:1.6;border-top:1px solid var(--line-soft);padding-top:12px">
-            ※ 在宅療養指導管理材料加算（注入器・酸素ボンベ・人工呼吸器加算等）は、令和8年改定で算定要件が<b>「3月に3回」に統一</b>されました（点数は各材料による）。<br>
-            ※ 退院後訪問栄養食事指導料は<b>退院元の医療機関</b>（管理栄養士）が算定する項目です。当院が在宅側で行う場合は C009 在宅患者訪問栄養食事指導料を算定。<br>
-            ※ 算定頻度の目安：在宅麻薬等注射・在宅酸素等の指導管理料＝月1回／遠隔連携診療料＝3月に1回／在宅自己腹膜灌流指導管理料2＝一連の治療につき2回。
+            ※ 各管理料に付随する加算（導入初期加算・遠隔モニタリング加算・乳幼児加算 等）は別途上乗せ。各項目の注記参照。<br>
+            ※ 在宅療養指導管理材料加算（注入器・酸素ボンベ・人工呼吸器加算等）は令和8年改定で算定要件が<b>「3月に3回」に統一</b>（点数は各材料による）。<br>
+            ※ 関連項目（本節外）：遠隔連携診療料（訪問診療の場合）900点・3月に1回／退院後訪問栄養食事指導料 530点（退院元の管理栄養士）。
           </div>
         </div>
         <div class="result">
@@ -336,7 +337,6 @@ const JUUJITSU={ zaitaku:[800,400,200,170,150], shisetsu:[600,300,150,126,112] }
 const KANRI_ADDONS=[
   {id:"isou",pt:100,label:"在宅移行早期加算",note:"在宅移行・開始月から3月限度"},
   {id:"houkatsu",pt:150,label:"包括的支援加算",note:"重症2回区分には算定不可"},
-  {id:"dx",pt:10,label:"在宅医療DX情報活用加算",note:"月1回"},
   {id:"renkei",pt:100,label:"在宅医療情報連携加算",note:"ICT多職種連携・月1回"},
   {id:"shohou",pt:300,label:"処方箋を交付しない場合",note:"院内投薬等"}
 ];
@@ -348,13 +348,53 @@ const OUSHIN_BASE=720;
 /* ターミナル 令和8年（病床あり） */
 const TERM_BASE=6500, TERM_MITORI=3000, TERM_SHIBO=200, TERM_O2=2000;
 const POINT_YEN=10;
-/* 在宅療養指導管理料ほか（令和8年改定・新設/見直し） */
+/* 在宅療養指導管理料（C100〜C121・令和8年点数）。注記の加算は別途上乗せ */
 const SHIDOU=[
-  {id:"hft2",pt:2400,label:"在宅ハイフローセラピー指導管理料2",note:"新設。重度低酸素血症で入院中に高濃度HFNC導入後、在宅継続"},
-  {id:"capd2",pt:1500,label:"在宅自己腹膜灌流指導管理料2",note:"新設。管理料1算定の他院の求めで指導管理（一連につき2回）"},
-  {id:"mayaku",pt:1500,label:"在宅麻薬等注射指導管理料3（心不全・呼吸器・腎不全）",note:"令和8で対象に末期腎不全を追加"},
-  {id:"enkaku",pt:900,label:"遠隔連携診療料（訪問診療の場合）",note:"D to P with D。3月に1回。外来緩和ケア管理料対象患者等"},
-  {id:"taiin_eiyou",pt:530,label:"退院後訪問栄養食事指導料",note:"新設。退院元の管理栄養士が患家訪問（退院1月以内・4回まで）"}
+  {id:"c100",pt:120,label:"C100 退院前在宅療養指導管理料",note:"外泊時。6歳未満は乳幼児加算+200"},
+  {id:"c101a",pt:1230,label:"C101 在宅自己注射指導管理料（複雑な場合）",note:"導入初期加算+580（3月限度）、バイオ後続品導入初期加算+150"},
+  {id:"c101b",pt:650,label:"C101 在宅自己注射指導管理料（1以外・月27回以下）"},
+  {id:"c101c",pt:750,label:"C101 在宅自己注射指導管理料（1以外・月28回以上）"},
+  {id:"c101_2",pt:820,label:"C101-2 在宅小児低血糖症患者指導管理料"},
+  {id:"c101_3a",pt:150,label:"C101-3 在宅妊娠糖尿病患者指導管理料1"},
+  {id:"c101_3b",pt:150,label:"C101-3 在宅妊娠糖尿病患者指導管理料2",note:"分娩後12週・1回"},
+  {id:"c102a",pt:4000,label:"C102 在宅自己腹膜灌流指導管理料1",note:"2回目以降+2,000（月2回まで）、遠隔モニタリング加算+115"},
+  {id:"c102b",pt:1500,label:"C102 在宅自己腹膜灌流指導管理料2",note:"他院の求めに応じ・一連の治療につき2回"},
+  {id:"c102_2",pt:10000,label:"C102-2 在宅血液透析指導管理料",note:"最初の2月は2回目以降+2,000（月2回まで）、遠隔モニタリング+115"},
+  {id:"c103a",pt:520,label:"C103 在宅酸素療法指導管理料1（チアノーゼ型先天性心疾患）"},
+  {id:"c103b",pt:2400,label:"C103 在宅酸素療法指導管理料2（その他）",note:"遠隔モニタリング加算+150×月数（2月限度）"},
+  {id:"c104",pt:3000,label:"C104 在宅中心静脈栄養法指導管理料"},
+  {id:"c105",pt:2500,label:"C105 在宅成分栄養経管栄養法指導管理料"},
+  {id:"c105_2",pt:1050,label:"C105-2 在宅小児経管栄養法指導管理料"},
+  {id:"c105_3",pt:2500,label:"C105-3 在宅半固形栄養経管栄養法指導管理料",note:"最初の算定から1年限度"},
+  {id:"c106",pt:1400,label:"C106 在宅自己導尿指導管理料",note:"カテーテルは材料加算で別算定"},
+  {id:"c107",pt:2800,label:"C107 在宅人工呼吸指導管理料"},
+  {id:"c107_2a",pt:2250,label:"C107-2 在宅持続陽圧呼吸療法指導管理料1"},
+  {id:"c107_2b",pt:240,label:"C107-2 在宅持続陽圧呼吸療法指導管理料2",note:"充実管理体制加算+15、遠隔モニタリング+150×月数"},
+  {id:"c107_3a",pt:2400,label:"C107-3 在宅ハイフローセラピー指導管理料1（COPD）"},
+  {id:"c107_3b",pt:2400,label:"C107-3 在宅ハイフローセラピー指導管理料2（重度低酸素血症）",note:"令和8新設"},
+  {id:"c108a",pt:1500,label:"C108 在宅麻薬等注射指導管理料1（悪性腫瘍）"},
+  {id:"c108b",pt:1500,label:"C108 在宅麻薬等注射指導管理料2（ALS・筋ジストロフィー）"},
+  {id:"c108c",pt:1500,label:"C108 在宅麻薬等注射指導管理料3（心不全・呼吸器・腎不全）",note:"令和8で末期腎不全を対象追加"},
+  {id:"c108_2",pt:1500,label:"C108-2 在宅腫瘍化学療法注射指導管理料"},
+  {id:"c108_3",pt:1500,label:"C108-3 在宅強心剤持続投与指導管理料"},
+  {id:"c108_4",pt:1500,label:"C108-4 在宅悪性腫瘍患者共同指導管理料"},
+  {id:"c109",pt:1050,label:"C109 在宅寝たきり患者処置指導管理料"},
+  {id:"c110",pt:1300,label:"C110 在宅自己疼痛管理指導管理料"},
+  {id:"c110_2",pt:810,label:"C110-2 在宅振戦等刺激装置治療指導管理料",note:"導入期加算+140（植込3月以内）"},
+  {id:"c110_3",pt:810,label:"C110-3 在宅迷走神経電気刺激治療指導管理料",note:"導入期加算+140"},
+  {id:"c110_4",pt:810,label:"C110-4 在宅仙骨神経刺激療法指導管理料"},
+  {id:"c110_5",pt:810,label:"C110-5 在宅舌下神経電気刺激療法指導管理料"},
+  {id:"c111",pt:1500,label:"C111 在宅肺高血圧症患者指導管理料"},
+  {id:"c112",pt:900,label:"C112 在宅気管切開患者指導管理料"},
+  {id:"c112_2",pt:900,label:"C112-2 在宅喉頭摘出患者指導管理料"},
+  {id:"c114",pt:1000,label:"C114 在宅難治性皮膚疾患処置指導管理料"},
+  {id:"c116",pt:45000,label:"C116 在宅植込型補助人工心臓（非拍動流型）指導管理料"},
+  {id:"c117",pt:1500,label:"C117 在宅経腸投薬指導管理料"},
+  {id:"c118a",pt:2800,label:"C118 在宅腫瘍治療電場療法指導管理料1（膠芽腫）"},
+  {id:"c118b",pt:2800,label:"C118 在宅腫瘍治療電場療法指導管理料2（非小細胞肺癌）"},
+  {id:"c119",pt:800,label:"C119 在宅経肛門的自己洗腸指導管理料",note:"導入初期加算+500（初回月）"},
+  {id:"c120",pt:1800,label:"C120 在宅中耳加圧療法指導管理料"},
+  {id:"c121",pt:800,label:"C121 在宅抗菌薬吸入療法指導管理料",note:"導入初期加算+500（初回月）"}
 ];
 
 const $=s=>document.querySelector(s);
@@ -385,7 +425,7 @@ const sList=$('#shidouList');
 SHIDOU.forEach(s=>{
   const l=document.createElement('label'); l.className='chk';
   l.innerHTML='<input type="checkbox" data-pt="'+s.pt+'" value="'+s.id+'"><span class="box"></span>'+
-    '<span class="ctext"><b>'+s.label+'</b> <span class="cv">'+fmt(s.pt)+'</span><div class="cd">'+s.note+'</div></span>';
+    '<span class="ctext"><b>'+s.label+'</b> <span class="cv">'+fmt(s.pt)+'</span>'+(s.note?'<div class="cd">'+s.note+'</div>':'')+'</span>';
   sList.appendChild(l);
 });
 function calcShidou(){
@@ -419,6 +459,7 @@ function calcHomon(){
   $('#hp_alone').textContent=fmt(HOMON[k].alone); $('#hp_same').textContent=fmt(HOMON[k].same);
   let base=HOMON[k][b], total=base;
   let rows='<div class="row"><span class="k">訪問診療料'+k+'・'+(b==='alone'?'同一建物以外':'同一建物')+'</span><span class="v">'+fmt(base)+'</span></div>';
+  if($('#h_dx').checked){total+=10;rows+='<div class="row add"><span class="k">＋ 在宅医療DX情報活用加算</span><span class="v">+10</span></div>';}
   if($('#h_baby').checked){total+=HOMON_BABY;rows+='<div class="row add"><span class="k">＋ 乳幼児加算</span><span class="v">+'+fmt(HOMON_BABY)+'</span></div>';}
   if($('#h_yakuzai').checked){total+=HOMON_YAKUZAI;rows+='<div class="row add"><span class="k">＋ 訪問診療薬剤師同時指導料</span><span class="v">+'+fmt(HOMON_YAKUZAI)+'</span></div>';}
   const t=Math.max(0,+$('#h_time').value||0); if(t){const v=t*TIME_UNIT;total+=v;rows+='<div class="row add"><span class="k">＋ 患家診療時間加算（'+t+'×30分）</span><span class="v">+'+fmt(v)+'</span></div>';}
